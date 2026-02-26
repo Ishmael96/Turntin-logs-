@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Turnitin — Originality & AI Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f4f6f9;color:#1a1a2e;min-height:100vh}
+/* TOP NAV */
+.nav{background:#fff;border-bottom:3px solid #e74c3c;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.logo-text{font-size:22px;font-weight:700;color:#e74c3c;letter-spacing:-0.5px}
+.logo-sub{font-size:11px;color:#888;font-weight:400}
+.nav-links{display:flex;gap:24px}
+.nav-links a{font-size:13px;color:#555;text-decoration:none;font-weight:500}
+.nav-links a:hover{color:#e74c3c}
+.nav-badge{background:#e74c3c;color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+/* PAGE LAYOUT */
+.page{max-width:1100px;margin:0 auto;padding:32px 20px 80px}
+/* UPLOAD SECTION */
+.upload-card{background:#fff;border-radius:12px;padding:36px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:24px}
+.card-title{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:6px}
+.card-sub{font-size:13px;color:#888;margin-bottom:24px}
+.tabs{display:flex;gap:0;border-bottom:2px solid #eee;margin-bottom:24px}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab.active{color:#e74c3c;border-bottom-color:#e74c3c;font-weight:600}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* File Drop */
+.drop-zone{border:2px dashed #dde;border-radius:10px;padding:44px;text-align:center;cursor:pointer;transition:.2s;background:#fafbfc}
+.drop-zone:hover,.drop-zone.dragover{border-color:#e74c3c;background:#fff5f5}
+.drop-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.drop-title{font-size:15px;font-weight:600;color:#333;margin-bottom:6px}
+.drop-sub{font-size:12px;color:#aaa;margin-bottom:16px}
+#fileInput{display:none}
+.btn-browse{background:#e74c3c;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-browse:hover{background:#c0392b}
+.file-selected{display:none;align-items:center;gap:10px;background:#f0fff4;border:1px solid #c3e6cb;border-radius:8px;padding:12px 16px;margin-top:12px}
+.file-icon{font-size:20px}
+.file-name{font-size:13px;font-weight:600;color:#155724}
+.file-size{font-size:11px;color:#888}
+/* Textarea */
+textarea{width:100%;min-height:200px;border:1px solid #dde;border-radius:8px;padding:14px;font-size:14px;font-family:'Inter',sans-serif;resize:vertical;outline:none;transition:.2s;line-height:1.6}
+textarea:focus{border-color:#e74c3c;box-shadow:0 0 0 3px rgba(231,76,60,.1)}
+.meta-row{display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-top:6px;font-family:monospace}
+/* Buttons */
+.submit-row{display:flex;gap:12px;margin-top:20px;align-items:center}
+.btn-primary{background:#e74c3c;color:#fff;border:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;letter-spacing:.3px}
+.btn-primary:hover{background:#c0392b;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-sec{background:#fff;color:#555;border:1px solid #dde;padding:13px 20px;border-radius:8px;font-size:13px;cursor:pointer;transition:.2s}
+.btn-sec:hover{border-color:#aaa;color:#333}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+/* RESULTS */
+#results{display:none;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* Report header */
+.report-header{background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px;border-left:4px solid #e74c3c}
+.rh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px}
+.rh-title{font-size:18px;font-weight:700;color:#1a1a2e}
+.rh-id{font-family:monospace;font-size:12px;background:#f4f6f9;padding:4px 10px;border-radius:20px;color:#666}
+.rh-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.rh-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#aaa;display:block;margin-bottom:2px}
+.rh-field span{font-size:13px;font-weight:600;color:#1a1a2e}
+/* Score grid */
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:640px){.score-grid{grid-template-columns:1fr}}
+.score-card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;position:relative;overflow:hidden}
+.sc-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;margin-bottom:14px}
+.sc-num{font-size:52px;font-weight:800;line-height:1;margin-bottom:6px}
+.sc-label{font-size:13px;font-weight:700;margin-bottom:4px}
+.sc-desc{font-size:11px;color:#aaa}
+.sc-bar{height:4px;background:#eee;border-radius:2px;margin:12px 0 0;overflow:hidden}
+.sc-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.34,1.56,.64,1)}
+/* Tabs for results */
+.result-tabs{display:flex;gap:0;background:#fff;border-radius:12px 12px 0 0;border-bottom:2px solid #eee;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06) }
+.rtab{padding:14px 24px;font-size:13px;font-weight:600;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.rtab.active{color:#e74c3c;border-bottom-color:#e74c3c;background:#fff8f8}
+.result-panel{background:#fff;border-radius:0 0 12px 12px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,.06);display:none;margin-bottom:20px}
+.result-panel.active{display:block}
+/* Highlighted text */
+.highlight-key{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#f8f9fa;border-radius:8px}
+.hk-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+.hk-dot{width:12px;height:12px;border-radius:3px}
+.text-content{font-size:14px;line-height:1.9;padding:16px;background:#fafbfc;border-radius:8px;border:1px solid #eee}
+.hl-red{background:#ffecec;border-left:3px solid #e74c3c;padding:2px 4px;border-radius:2px;color:#c0392b}
+.hl-purple{background:#f3e8ff;border-left:3px solid #9b59b6;padding:2px 4px;border-radius:2px;color:#7d3c98}
+.hl-green{background:#eafaf1;padding:2px 4px;border-radius:2px;color:#1e8449}
+.hl-orange{background:#fef9e7;border-left:3px solid #f39c12;padding:2px 4px;border-radius:2px;color:#d68910}
+/* Sources table */
+.src-table{width:100%;border-collapse:collapse;font-size:13px}
+.src-table th{background:#1a1a2e;color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.src-table td{padding:11px 14px;border-bottom:1px solid #f0f0f0}
+.src-table tr:hover td{background:#fafbfc}
+.src-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.src-pct{font-weight:700;font-size:14px}
+/* Phrases */
+.phrase-grid{display:flex;flex-wrap:wrap;gap:8px}
+.phrase-tag{background:#fff5f5;border:1px solid #fecaca;color:#b91c1c;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
+/* Stats grid */
+.stats-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.stat-box{background:#f8f9fa;border-radius:8px;padding:16px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;color:#1a1a2e}
+.stat-lbl{font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+/* Download buttons */
+.download-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.btn-dl{display:flex;align-items:center;gap:8px;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:.2s}
+.btn-dl:hover{transform:translateY(-1px)}
+.btn-dl-red{background:#e74c3c;color:#fff}
+.btn-dl-red:hover{background:#c0392b}
+.btn-dl-purple{background:#8e44ad;color:#fff}
+.btn-dl-purple:hover{background:#7d3c98}
+.btn-dl-dark{background:#1a1a2e;color:#fff}
+.btn-dl-dark:hover{background:#0d0d1a}
+/* FAQs */
+.faq-item{border-bottom:1px solid #f0f0f0;padding:14px 0}
+.faq-q{font-weight:700;font-size:14px;color:#1a1a2e;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:18px;color:#e74c3c;font-weight:400}
+.faq-q.open::after{content:'−'}
+.faq-a{font-size:13px;color:#555;line-height:1.7;margin-top:8px;display:none;padding-left:12px;border-left:3px solid #f0f0f0}
+.faq-a.show{display:block}
+/* Disclaimer */
+.disclaimer{background:#e8f0fe;border:1px solid #c5d8fc;border-radius:8px;padding:16px;font-size:12px;color:#1565c0;line-height:1.7;margin-top:16px}
+.disclaimer b{display:block;margin-bottom:4px;font-size:13px}
+/* Readability bar */
+.rb{margin-top:12px}
+.rb-label{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.rb-track{background:#eee;border-radius:4px;height:8px;overflow:hidden}
+.rb-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#e74c3c,#f39c12);transition:width 1s}
+/* Section titles */
+.sec-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-title::before{content:'';display:inline-block;width:3px;height:16px;background:#e74c3c;border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div>
+      <div class="logo-text">Turnitin</div>
+      <div class="logo-sub">Originality &amp; AI Detection</div>
+    </div>
+    <span class="nav-badge">Beta</span>
+  </div>
+  <div class="nav-links">
+    <a href="#">Products</a>
+    <a href="#">Resources</a>
+    <a href="#">Support</a>
+    <a href="#faq-section">FAQs</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- UPLOAD CARD -->
+  <div class="upload-card">
+    <div class="card-title">Submit for Analysis</div>
+    <div class="card-sub">Upload a document or paste text to check for AI writing and plagiarism</div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('file')">📄 Upload Document</div>
+      <div class="tab" onclick="switchTab('text')">✏️ Paste Text</div>
+    </div>
+
+    <!-- File Tab -->
+    <div class="tab-content active" id="tab-file">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="ev.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Drop your file here or click to browse</div>
+        <div class="drop-sub">Supports .PDF, .DOCX, .TXT — Max 16MB</div>
+        <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Browse Files</button>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.txt" onchange="handleFile(this.files[0])"/>
+      <div class="file-selected" id="fileSelected">
+        <span class="file-icon">📄</span>
+        <div><div class="file-name" id="fileName">—</div><div class="file-size" id="fileSize">—</div></div>
+        <span style="margin-left:auto;cursor:pointer;color:#aaa;font-size:18px" onclick="clearFile()">✕</span>
+      </div>
+    </div>
+
+    <!-- Text Tab -->
+    <div class="tab-content" id="tab-text">
+      <textarea id="textInput" placeholder="Paste your essay, assignment, article, or any text here...&#10;&#10;Minimum 50 characters required."></textarea>
+      <div class="meta-row"><span id="charCount">0 chars</span><span id="wordCount">0 words</span></div>
+    </div>
+
+    <div class="submit-row">
+      <button class="btn-primary" id="submitBtn" onclick="submitAnalysis()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Analyze Submission
+      </button>
+      <button class="btn-sec" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <!-- Report header -->
+    <div class="report-header">
+      <div class="rh-top">
+        <div class="rh-title">📋 Submission Report</div>
+        <div class="rh-id">ID: <span id="rSubmissionId">—</span></div>
+      </div>
+      <div class="rh-meta">
+        <div class="rh-field"><label>Document</label><span id="rFilename">—</span></div>
+        <div class="rh-field"><label>Submitted</label><span id="rDate">—</span></div>
+        <div class="rh-field"><label>Words</label><span id="rWords">—</span></div>
+        <div class="rh-field"><label>Sentences</label><span id="rSents">—</span></div>
+        <div class="rh-field"><label>Grade Level</label><span id="rGrade">—</span></div>
+      </div>
+    </div>
+
+    <!-- Score grid -->
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="sc-type">Similarity Index</div>
+        <div class="sc-num" id="sPlag">0<span style="font-size:22px">%</span></div>
+        <div class="sc-label" id="sPlagLabel">—</div>
+        <div class="sc-desc">Plagiarism similarity</div>
+        <div class="sc-bar"><div class="sc-fill" id="sPlagBar" style="width:0%;background:#e74c3c"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="sc-type">AI Writing</div>
+        <div class="sc-num" id="sAI">0<span style="font-size:22px">%</span></div>
+        <div class="sc-label" id="sAILabel">—</div>
+        <div class="sc-desc">AI-generated probability</div>
+        <div class="sc-bar"><div class="sc-fill" id="sAIBar" style="width:0%;background:#8e44ad"></div></div>
+      </div>
+      <div class="score-card">
+        <div class="sc-type">AI Paraphrased</div>
+        <div class="sc-num" id="sAIPara">0<span style="font-size:22px">%</span></div>
+        <div class="sc-label" style="color:#f39c12">AI Paraphrasing</div>
+        <div class="sc-desc">Edited AI-generated text</div>
+        <div class="sc-bar"><div class="sc-fill" id="sAIParaBar" style="width:0%;background:#f39c12"></div></div>
+      </div>
+    </div>
+
+    <!-- Download buttons -->
+    <div class="download-row">
+      <button class="btn-dl btn-dl-red" onclick="downloadReport('similarity')">
+        ⬇ Download Similarity Report
+      </button>
+      <button class="btn-dl btn-dl-purple" onclick="downloadReport('ai')">
+        ⬇ Download AI Detection Report
+      </button>
+    </div>
+
+    <!-- Result Tabs -->
+    <div class="result-tabs">
+      <div class="rtab active" onclick="switchResult('text')">Text Analysis</div>
+      <div class="rtab" onclick="switchResult('sources')">Matched Sources</div>
+      <div class="rtab" onclick="switchResult('ai')">AI Phrases</div>
+      <div class="rtab" onclick="switchResult('stats')">Statistics</div>
+      <div class="rtab" onclick="switchResult('faq')">FAQs</div>
+    </div>
+
+    <!-- Text analysis panel -->
+    <div class="result-panel active" id="panel-text">
+      <div class="highlight-key">
+        <div class="hk-item"><div class="hk-dot" style="background:#e74c3c"></div> Similarity Match</div>
+        <div class="hk-item"><div class="hk-dot" style="background:#9b59b6"></div> AI Paraphrased</div>
+        <div class="hk-item"><div class="hk-dot" style="background:#f39c12"></div> Uncertain/Mixed</div>
+        <div class="hk-item"><div class="hk-dot" style="background:#27ae60"></div> Original Content</div>
+      </div>
+      <div class="text-content" id="textContent">—</div>
+    </div>
+
+    <!-- Sources panel -->
+    <div class="result-panel" id="panel-sources">
+      <div class="sec-title">Matched Internet Sources</div>
+      <div id="sourcesContent">—</div>
+    </div>
+
+    <!-- AI Phrases panel -->
+    <div class="result-panel" id="panel-ai">
+      <div class="sec-title">AI-Indicative Phrases Found</div>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">These phrases are commonly associated with AI-generated writing:</p>
+      <div class="phrase-grid" id="phrasesContent">—</div>
+    </div>
+
+    <!-- Stats panel -->
+    <div class="result-panel" id="panel-stats">
+      <div class="sec-title">Document Statistics</div>
+      <div class="stats-4" id="statsContent">—</div>
+      <div class="rb">
+        <div class="rb-label"><span>Flesch Readability Score</span><span id="rbScore">—</span></div>
+        <div class="rb-track"><div class="rb-fill" id="rbFill" style="width:0%"></div></div>
+        <div style="font-size:11px;color:#aaa;margin-top:6px">Higher = easier to read (College-level text typically scores 30–50)</div>
+      </div>
+    </div>
+
+    <!-- FAQ panel -->
+    <div class="result-panel" id="panel-faq" id="faq-section">
+      <div class="sec-title">Frequently Asked Questions — AI Writing Detection</div>
+      <div id="faqContent"></div>
+      <div class="disclaimer">
+        <b>Turnitin AI Writing Detection Disclaimer</b>
+        Turnitin's AI writing detection model is designed to help educators identify text that may have been generated by AI writing tools such as ChatGPT, Claude, Gemini, or similar large language models. The AI writing detection score indicates the percentage of text in the submitted document that Turnitin's model predicts was generated by AI. The model may not catch all AI writing, and it may occasionally flag human-written text as AI-generated. Turnitin recommends that this score be used as one factor in a holistic review process, and not as the sole basis for any academic integrity decisions. Scores of 20% or higher may warrant further investigation by instructors. For more information, visit <b style="color:#1565c0">turnitin.com</b>.
+      </div>
+    </div>
+
+  </div><!-- /results -->
+
+</div><!-- /page -->
+
+<script>
+let currentTab = 'file';
+let currentFile = null;
+let resultData = null;
+
+// Tab switching (upload)
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='file')||(i===1&&t==='text')));
+  document.getElementById('tab-file').classList.toggle('active', t==='file');
+  document.getElementById('tab-text').classList.toggle('active', t==='text');
+}
+
+// Result tab switching
+function switchResult(t) {
+  document.querySelectorAll('.rtab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.result-panel').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+// File handling
+function handleFile(f) {
+  if (!f) return;
+  currentFile = f;
+  document.getElementById('fileSelected').style.display = 'flex';
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileSize').textContent = (f.size/1024).toFixed(1) + ' KB';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+function clearFile() {
+  currentFile = null;
+  document.getElementById('fileSelected').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+document.getElementById('textInput').addEventListener('input', function() {
+  const t = this.value;
+  document.getElementById('charCount').textContent = t.length + ' chars';
+  document.getElementById('wordCount').textContent = (t.trim() ? t.trim().split(/\s+/).length : 0) + ' words';
+});
+
+function clearAll() {
+  clearFile();
+  document.getElementById('textInput').value = '';
+  document.getElementById('charCount').textContent = '0 chars';
+  document.getElementById('wordCount').textContent = '0 words';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+async function submitAnalysis() {
+  const btn = document.getElementById('submitBtn');
+  const errBox = document.getElementById('errorBox');
+  errBox.style.display = 'none';
+
+  let formData = new FormData();
+  if (currentTab === 'file') {
+    if (!currentFile) { showError('Please select a file to upload.'); return; }
+    formData.append('file', currentFile);
+  } else {
+    const text = document.getElementById('textInput').value.trim();
+    if (text.length < 50) { showError('Please enter at least 50 characters of text.'); return; }
+    formData.append('text', text);
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Analyzing...';
+
+  try {
+    const resp = await fetch('/analyze', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (data.error) { showError(data.error); return; }
+    resultData = data;
+    renderResults(data);
+  } catch(e) {
+    showError('Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analyze Submission';
+  }
+}
+
+function showError(msg) {
+  const e = document.getElementById('errorBox');
+  e.textContent = msg;
+  e.style.display = 'block';
+}
+
+function renderResults(d) {
+  document.getElementById('results').style.display = 'block';
+
+  // Header
+  document.getElementById('rSubmissionId').textContent = d.submission_id;
+  document.getElementById('rFilename').textContent = d.filename;
+  document.getElementById('rDate').textContent = d.submission_date;
+  document.getElementById('rWords').textContent = d.word_count.toLocaleString();
+  document.getElementById('rSents').textContent = d.sentence_count;
+  document.getElementById('rGrade').textContent = d.grade_level;
+
+  // Scores with animation
+  setTimeout(() => {
+    animNum('sPlag', d.plag_score);
+    animNum('sAI', d.ai_score);
+    animNum('sAIPara', d.ai_paraphrased_score);
+    document.getElementById('sPlagBar').style.width = d.plag_score + '%';
+    document.getElementById('sAIBar').style.width = d.ai_score + '%';
+    document.getElementById('sAIParaBar').style.width = d.ai_paraphrased_score + '%';
+
+    const pl = d.plag_label;
+    document.getElementById('sPlagLabel').innerHTML = '<span style="color:'+pl[1]+'">'+pl[0]+'</span>';
+    const al = d.ai_label;
+    document.getElementById('sAILabel').innerHTML = '<span style="color:'+al[1]+'">'+al[0]+'</span>';
+  }, 100);
+
+  // Highlighted text
+  renderHighlightedText(d);
+  // Sources
+  renderSources(d);
+  // AI Phrases
+  renderPhrases(d);
+  // Stats
+  renderStats(d);
+  // FAQs
+  renderFAQs();
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderHighlightedText(d) {
+  const hs = d.highlighted_sentences || [];
+  const preview = d.text_preview || '';
+  if (!hs.length) {
+    document.getElementById('textContent').textContent = preview.substring(0,1500) || 'No text available.';
+    return;
+  }
+  // Build a highlighted version
+  let html = preview.substring(0,2000);
+  hs.forEach(sent => {
+    const escaped = sent.text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const cls = sent.source === 'AI Generated Content' ? 'hl-purple' : 'hl-red';
+    const title = sent.source === 'AI Generated Content'
+      ? 'AI-paraphrased content'
+      : sent.source + ' — ' + sent.match_pct + '% match';
+    html = html.replace(new RegExp(escaped.substring(0,40),'g'),
+      '<span class="'+cls+'" title="'+title+'">'+sent.text+'</span>');
+  });
+  document.getElementById('textContent').innerHTML = html;
+}
+
+function renderSources(d) {
+  const srcs = d.matched_sources || [];
+  if (!srcs.length) {
+    document.getElementById('sourcesContent').innerHTML = '<p style="color:#aaa;font-size:13px;padding:20px 0;text-align:center">No significant source matches detected.</p>';
+    return;
+  }
+  let html = '<table class="src-table"><thead><tr><th>#</th><th>Source</th><th>URL</th><th style="text-align:right">Similarity</th></tr></thead><tbody>';
+  srcs.forEach((s,i) => {
+    html += `<tr>
+      <td><span class="src-dot" style="background:${s.color}"></span>${i+1}</td>
+      <td><b style="color:${s.color}">${s.name}</b></td>
+      <td style="color:#1565c0;font-size:12px">${s.url}</td>
+      <td style="text-align:right"><span class="src-pct" style="color:${s.color}">${s.pct}%</span></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<div style="margin-top:20px"><div class="sec-title">Colour Key</div><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px">';
+  srcs.forEach(s => {
+    html += `<div style="display:flex;align-items:center;gap:6px;font-size:12px;background:#f8f9fa;padding:6px 12px;border-radius:20px"><span style="width:10px;height:10px;background:${s.color};border-radius:50%;display:inline-block"></span><b>${s.name}</b> — ${s.pct}%</div>`;
+  });
+  html += '</div></div>';
+  document.getElementById('sourcesContent').innerHTML = html;
+}
+
+function renderPhrases(d) {
+  const phrases = d.flagged_phrases || [];
+  if (!phrases.length) {
+    document.getElementById('phrasesContent').innerHTML = '<span style="color:#27ae60;font-size:13px;font-weight:600">✓ No AI-indicative phrases detected</span>';
+    return;
+  }
+  document.getElementById('phrasesContent').innerHTML = phrases.map(p => `<span class="phrase-tag">${p}</span>`).join('');
+}
+
+function renderStats(d) {
+  const stats = [
+    {v: d.word_count.toLocaleString(), l: 'Words'},
+    {v: d.sentence_count, l: 'Sentences'},
+    {v: d.character_count.toLocaleString(), l: 'Characters'},
+    {v: d.readability, l: 'Readability'},
+    {v: d.grade_level, l: 'Grade Level'},
+    {v: d.ai_score + '%', l: 'AI Score'},
+    {v: d.plag_score + '%', l: 'Similarity'},
+    {v: (d.original_pct || 100 - d.plag_score) + '%', l: 'Original'},
+  ];
+  document.getElementById('statsContent').innerHTML = stats.map(s => `
+    <div class="stat-box">
+      <div class="stat-val">${s.v}</div>
+      <div class="stat-lbl">${s.l}</div>
+    </div>`).join('');
+  const r = d.readability;
+  document.getElementById('rbScore').textContent = r + ' / 100';
+  setTimeout(() => { document.getElementById('rbFill').style.width = r + '%'; }, 100);
+}
+
+function renderFAQs() {
+  const faqs = [
+    ["What does the AI writing score mean?", "The AI writing score represents the percentage of text in your submission that Turnitin's model predicts was generated by AI tools such as ChatGPT, Gemini, Claude, or similar large language models. A higher score means more text shows patterns consistent with AI-generated writing."],
+    ["What is AI-paraphrased content?", "AI-paraphrased content refers to text that appears to have been generated by AI and then edited or reworded by a human. It often retains AI writing patterns while showing signs of manual modification. This is highlighted separately in purple on the report."],
+    ["What does the similarity index mean?", "The similarity index shows the percentage of submitted text that matches sources in Turnitin's database, which includes billions of internet pages, student papers, books, and academic publications."],
+    ["Can AI detection be 100% accurate?", "No. AI detection is probabilistic. Turnitin achieves high accuracy but cannot guarantee 100% certainty. Human-written text may occasionally score higher than expected, and some AI text may go undetected. Results should always be considered alongside other contextual factors."],
+    ["What score is considered concerning?", "Turnitin considers AI scores of 20% or above as potentially requiring further review by an instructor. For similarity, scores above 20-25% often warrant review, though this depends heavily on context and citation style."],
+    ["What do the highlight colours mean?", "Red highlights indicate text matched to known internet or database sources. Purple highlights indicate AI-paraphrased content. Orange indicates uncertain/mixed origin. Green indicates original human-written content."],
+    ["Can a student appeal the result?", "Yes. Turnitin strongly advises institutions to have a fair appeals process. Detection scores are not definitive proof of academic misconduct and should be reviewed alongside other evidence, including student dialogue."],
+    ["Does Turnitin store submitted documents?", "This depends on your institution's settings. Turnitin offers standard repository storage and can be configured to not retain submissions. For full details on data retention and privacy, consult your institution or visit turnitin.com/privacy."],
+  ];
+  let html = '';
+  faqs.forEach((faq, i) => {
+    html += `<div class="faq-item">
+      <div class="faq-q" onclick="toggleFAQ(this)">${faq[0]}</div>
+      <div class="faq-a">${faq[1]}</div>
+    </div>`;
+  });
+  document.getElementById('faqContent').innerHTML = html;
+}
+
+function toggleFAQ(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('show');
+}
+
+async function downloadReport(type) {
+  if (!resultData) return;
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  try {
+    const resp = await fetch('/report/' + type, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(resultData)
+    });
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (type === 'ai' ? 'Turnitin_AI_Report_' : 'Turnitin_Similarity_') + resultData.submission_id + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Failed to generate report. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = type === 'ai' ? '⬇ Download AI Detection Report' : '⬇ Download Similarity Report';
+  }
+}
+
+function animNum(id, target) {
+  const el = document.getElementById(id);
+  let cur = 0;
+  const step = target / 40;
+  const t = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.innerHTML = Math.round(cur) + '<span style="font-size:22px">%</span>';
+    if (cur >= target) clearInterval(t);
+  }, 25);
+}
+</script>
+</body>
+</html>
